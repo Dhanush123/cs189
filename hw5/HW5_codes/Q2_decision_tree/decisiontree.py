@@ -16,6 +16,8 @@ import inspect
 from savecsv import preds_to_csv
 
 import ray
+import itertools
+import numbers
 
 class Node:
     def __init__(self, feature=None, thresh=None, label=None, left=None, right=None):
@@ -56,23 +58,27 @@ class DecisionTree(object):
         
     @staticmethod
     def best_split(x, y):
-        best_gain, best_thresh, best_feature = 0, 0, None
+        best_gain, best_thresh, best_feature = 0, 0, 0
         num_features = x.shape[1]
-        for feature in range(num_features):
-            for value in np.unique(x[:,feature]):
-                _, y_left, _, y_right = DecisionTree.split(x, y, feature, value)
-                if len(y_left) > 0 and len(y_right) > 0:
-                    ig = DecisionTree.info_gain(y, y_left, y_right)
-                    if ig > best_gain:
-                        best_gain = ig
-                        best_thresh, best_feature = value, feature
+        features = range(num_features)
+        threshs = [value for feature in features for value in np.unique(x[:,feature])]
+        results = []
+        for feature, value in itertools.product(features,threshs):
+        # for feature in range(num_features):
+        #     for value in np.unique(x[:,feature]):
+            _, y_left, _, y_right = DecisionTree.split(x, y, feature, value)
+            if len(y_left) > 0 and len(y_right) > 0:
+                ig = DecisionTree.info_gain(y, y_left, y_right)
+                if ig > best_gain:
+                    best_gain = ig
+                    best_thresh, best_feature = value, feature
         return best_feature, best_thresh
 
     def grow_tree(self, x, y, depth=0):
-        print("currently on depth ",depth)
+        # print("currently on depth ",depth)
         #in case leaf isn't pure, majority value is safe choice
         majority_value = Counter(y).most_common(1)[0][0]
-        if DecisionTree.entropy(y) == 0 or len(y) < 25 or depth == self.max_depth:
+        if DecisionTree.entropy(y) == 0 or len(y) < 300 or depth == self.max_depth:
             return Node(label=majority_value)
 
         feature, thresh = DecisionTree.best_split(x, y)
@@ -81,7 +87,8 @@ class DecisionTree(object):
         if len(y_left) > 0 and len(y_right) > 0:
             left = self.grow_tree(x_left, y_left, depth+1)
             right = self.grow_tree(x_right, y_right, depth+1)
-            return Node(feature, thresh, "feature # "+str(feature)+" > "+str(thresh), left, right)
+            label = "feature # "+str(feature)+" > "+str(thresh)
+            return Node(feature, thresh, label, left, right)
         else:
             return Node(label=majority_value)     
 
@@ -92,13 +99,21 @@ class DecisionTree(object):
         """
         self.trained_tree = self.grow_tree(x, y)
 
+    # @ray.remote  
     def predict_single(self, node, sample):
-        if node.label == 0 or node.label == 1:
-            return node.label
-        else:
+        # if isinstance(node.label, numbers.Number):
+        #     return node.label
+        # else:
+        #     # print("pred single",node.label,node.feature,node.left,node.right)   
+        #     node = node.left if sample[node.feature] > node.thresh else node.right
+        #     return self.predict_single.remote(self,node, sample)
+        #print("prediction!!",sample,sample[node.feature],sample.shape)
+        cur_node = node
+        while not isinstance(cur_node.label, numbers.Number):
             # print("pred single",node.label,node.feature,node.left,node.right)   
-            node = node.left if sample[node.feature] > node.thresh else node.right
-            return self.predict_single(node, sample)
+            cur_node = cur_node.left if sample[cur_node.feature] > cur_node.thresh else cur_node.right
+            #print("node.label",cur_node.label)#,cur_node.left.label,cur_node.right.label)
+        return cur_node.label
 
     def predict(self, x, mode="train",tree_type="decisiontree",rf=None):
         """
@@ -143,21 +158,23 @@ class RandomForest(DecisionTree):
         """
         TODO: initialization of a random forest
         """
+        super(RandomForest, self).__init__()
         self.trained_trees = [None] * num_trees
         self.num_trees = num_trees
         self.rand_features = rand_features
         self.max_depth = max_depth  
         self.header = header
         ray.init()
+        ray.register_custom_serializer(RandomForest, use_pickle=True)
+
 
     @ray.remote   
     def parallel_grow_tree(self, x, y):
         feature_indices = np.random.choice([i for i in range(x.shape[1])],\
             size=int(np.sqrt(x.shape[1])),replace=False)
-        sample_indices = np.random.choice([i for i in range(x.shape[0])],\
-            size=x.shape[0],replace=True)
-        x = x[sample_indices,:]
+        sample_indices = np.random.randint(x.shape[0], size=x.shape[0])
         x = x[:,feature_indices]
+        x = x[sample_indices, :]
         return super(RandomForest, self).grow_tree(x, y)
 
     def fit(self, x, y):
@@ -167,14 +184,15 @@ class RandomForest(DecisionTree):
         self.trained_trees = ray.get([self.parallel_grow_tree.remote(self,x,y) for _ in range(self.num_trees)])
 
     @ray.remote
-    def parallel_predict(self, x, rf):
-        return super(RandomForest, self).predict(x,tree_type="randomforest",rf=rf)
+    def parallel_predict(self, x, model):
+        return super(RandomForest, self).predict(x,tree_type="randomforest",rf=model)
     
     def predict(self, x, mode="train"):
         """
         TODO: predict the labels for input data 
         """
-        all_preds = np.asarray(np.matrix(ray.get([self.parallel_predict.remote(self,x,rf=self.trained_trees[i]) for i in range(self.num_trees)])))
+        # print("confirming tree properties",len(self.trained_trees),type(self.trained_trees[0]))
+        all_preds = np.asarray(np.matrix(ray.get([self.parallel_predict.remote(self,x,self.trained_trees[i]) for i in range(self.num_trees)])))
         final_preds = np.apply_along_axis(lambda x: Counter(x).most_common(1)[0][0], 0, all_preds)
         if mode == "test":
             preds_to_csv(final_preds,self.header)
