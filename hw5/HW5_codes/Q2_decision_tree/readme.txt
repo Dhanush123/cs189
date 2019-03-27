@@ -1,4 +1,4 @@
 Dhanush Patel, SID: 3033247258
 - Note: I had to change the "open" function call in create_design_matrix in featurize.py because I got a "UnicodeDecodeError: 'utf-8' codec can't decode byte 0xa9 in position 1054: invalid start byte" error. Thus I change the open function call to use a different encoding: open(filename, encoding="latin-1")
-- besides the libraries used in the already provided code, make sure to have sklearn and nltk installed
+- besides the libraries used in the already provided code, make sure to have sklearn, nltk, and ray installed
 - go to datasets/spam-dataset/ and run "python featurize.py". Make sure your files directory looks like the one in the provided photo in the submission labeled "directory"

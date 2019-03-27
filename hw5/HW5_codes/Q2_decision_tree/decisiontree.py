@@ -13,7 +13,9 @@ from scipy import stats
 import random
 import inspect
 
-from savecsv import results_to_csv
+from savecsv import preds_to_csv
+
+import ray
 
 class Node:
     def __init__(self, feature=None, thresh=None, label=None, left=None, right=None):
@@ -23,13 +25,15 @@ class Node:
         self.left = left
         self.right = right
 
-class DecisionTree:
+class DecisionTree(object):
 
-    def __init__(self):
+    def __init__(self, max_depth=15, header=""):
         """
         TODO: initialization of a decision tree
         """
         self.trained_tree = None
+        self.max_depth = max_depth
+        self.header = header
 
     @staticmethod
     def entropy(y):
@@ -45,8 +49,8 @@ class DecisionTree:
 
     @staticmethod
     def split(x, y, feature, thresh):
-        left_filter = np.where(x > thresh)[0]
-        right_filter = np.where(x <= thresh)[0]
+        left_filter = np.where(x[:,feature] > thresh)[0]
+        right_filter = np.where(x[:,feature] <= thresh)[0]
         # print("split feature",x.shape,y.shape,left_filter.shape,right_filter.shape)   
         return x[left_filter], y[left_filter], x[right_filter], y[right_filter]
         
@@ -55,11 +59,7 @@ class DecisionTree:
         best_gain, best_thresh, best_feature = 0, 0, None
         num_features = x.shape[1]
         for feature in range(num_features):
-            # x_feature = x[:,feature]
-            # argsrt = np.argsort(x_feature)
-            # sorted_x = x_feature[argsrt]
-            # sorted_y = y[argsrt]
-            for value in range(x.shape[0]):
+            for value in np.unique(x[:,feature]):
                 _, y_left, _, y_right = DecisionTree.split(x, y, feature, value)
                 if len(y_left) > 0 and len(y_right) > 0:
                     ig = DecisionTree.info_gain(y, y_left, y_right)
@@ -68,19 +68,13 @@ class DecisionTree:
                         best_thresh, best_feature = value, feature
         return best_feature, best_thresh
 
-    def grow_tree(self, x, y, depth):
-        # print("currently on depth ",depth)
+    def grow_tree(self, x, y, depth=0):
+        print("currently on depth ",depth)
         #in case leaf isn't pure, majority value is safe choice
         majority_value = Counter(y).most_common(1)[0][0]
-        # print("maj val",majority_value)
-        #250 ~ 5% of training set   
-
-        #DecisionTree.entropy(y) == 0 or
-        if DecisionTree.entropy(y) == 0 or len(y) < 250 or depth == 15:
-            # print("here?")
+        if DecisionTree.entropy(y) == 0 or len(y) < 25 or depth == self.max_depth:
             return Node(label=majority_value)
 
-        # print("or here")
         feature, thresh = DecisionTree.best_split(x, y)
         x_left, y_left, x_right, y_right = DecisionTree.split(x, y, feature, thresh)
 
@@ -96,55 +90,103 @@ class DecisionTree:
         TODO: fit the model to a training set. Think about what would be 
         your stopping criteria
         """
-        self.trained_tree = self.grow_tree(x, y, 0)
+        self.trained_tree = self.grow_tree(x, y)
 
     def predict_single(self, node, sample):
-        # print(node.label,node.feature,node.left,node.right)
         if node.label == 0 or node.label == 1:
             return node.label
         else:
+            # print("pred single",node.label,node.feature,node.left,node.right)   
             node = node.left if sample[node.feature] > node.thresh else node.right
             return self.predict_single(node, sample)
 
-    def predict(self, x, mode="test"):
+    def predict(self, x, mode="train",tree_type="decisiontree",rf=None):
         """
         TODO: predict the labels for input data 
         """
         num_samples = x.shape[0]
         y = np.zeros((num_samples))
         for row in range(num_samples):
-            pred = self.predict_single(self.trained_tree, x[row,:])
+            pred = None
+            if tree_type == "decisiontree":
+                pred = self.predict_single(self.trained_tree, x[row,:])
+            elif tree_type == "randomforest":
+                pred = self.predict_single(rf, x[row,:])
             # print("pred",pred)
             y[row] = pred
-        if mode == "test":
-            results_to_csv(y)
+        if mode == "test" and tree_type == "decisiontree":
+            preds_to_csv(y,self.header)
         else:
             return y
 
-    # def __repr__(self):
-    #     """
-    #     TODO: one way to visualize the decision tree is to write out a __repr__ method
-    #     that returns the string representation of a tree. Think about how to visualize 
-    #     a tree structure. You might have seen this before in CS61A.
-    #     """
-    #     return 0
+    def print_tree(self):
+        def print_level(node):
+          depth = 0   
+          cur_level = [node]
+          while cur_level:
+            next_level = []
+            for node in cur_level:
+              print("Depth",str(depth)+":",str(node.label))
+              if node.left: 
+                next_level.append(node.left)
+              if node.right: 
+                next_level.append(node.right)
+            depth += 1
+            cur_level = next_level
+            print("\n")
+        print_level(self.trained_tree)
 
 
-class RandomForest():
+class RandomForest(DecisionTree):
     
-    def __init__(self):
+    def __init__(self,num_trees=0,rand_features=None,max_depth=15,header=""):
         """
         TODO: initialization of a random forest
         """
+        self.trained_trees = [None] * num_trees
+        self.num_trees = num_trees
+        self.rand_features = rand_features
+        self.max_depth = max_depth  
+        self.header = header
+        ray.init()
 
-    def fit(self, X, y):
+    @ray.remote   
+    def parallel_grow_tree(self, x, y):
+        feature_indices = np.random.choice([i for i in range(x.shape[1])],\
+            size=int(np.sqrt(x.shape[1])),replace=False)
+        sample_indices = np.random.choice([i for i in range(x.shape[0])],\
+            size=x.shape[0],replace=True)
+        x = x[sample_indices,:]
+        x = x[:,feature_indices]
+        return super(RandomForest, self).grow_tree(x, y)
+
+    def fit(self, x, y):
         """
         TODO: fit the model to a training set.
         """
-        return 0
+        self.trained_trees = ray.get([self.parallel_grow_tree.remote(self,x,y) for _ in range(self.num_trees)])
+
+    @ray.remote
+    def parallel_predict(self, x, rf):
+        return super(RandomForest, self).predict(x,tree_type="randomforest",rf=rf)
     
-    def predict(self, X):
+    def predict(self, x, mode="train"):
         """
         TODO: predict the labels for input data 
         """
-        return 0
+        all_preds = np.asarray(np.matrix(ray.get([self.parallel_predict.remote(self,x,rf=self.trained_trees[i]) for i in range(self.num_trees)])))
+        final_preds = np.apply_along_axis(lambda x: Counter(x).most_common(1)[0][0], 0, all_preds)
+        if mode == "test":
+            preds_to_csv(final_preds,self.header)
+        else:
+            return final_preds
+
+
+
+
+
+
+
+
+
+
