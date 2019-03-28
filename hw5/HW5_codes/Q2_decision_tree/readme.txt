@@ -1,4 +1,6 @@
 Dhanush Patel, SID: 3033247258
-- Note: I had to change the "open" function call in create_design_matrix in featurize.py because I got a "UnicodeDecodeError: 'utf-8' codec can't decode byte 0xa9 in position 1054: invalid start byte" error. Thus I change the open function call to use a different encoding: open(filename, encoding="latin-1")
-- besides the libraries used in the already provided code, make sure to have sklearn, nltk, and ray installed
-- go to datasets/spam-dataset/ and run "python featurize.py". Make sure your files directory looks like the one in the provided photo in the submission labeled "directory"
+- Make sure the python files and notebooks are placed relative to the data files as visualized in the screenshot bundled with this submission in order to reproduce my results.
+- Make sure all the libraries imported in my files are installed. Some special ones to know about are scikit-learn, nltk, and ray.
+- go to the directory containing the featurize_spam.py file and run it before running the spam notebooks.
+- Before running any notebooks, when you open them, read the output of cells to see how long they took to run for me as an estimate for how long they might take for you (I used a 6-core i7 laptop) since some training cells take some time to run.
+- For the random forest notebooks, don't try to rerun a cell in the scenarios that it takes a while to run or gives an error. Instead, restart the kernel and then run all cells in order. This is because rerunning a cell using ray causes a ray initialization error.
