@@ -36,6 +36,7 @@ from sklearn.model_selection import train_test_split
 from nltk.corpus import stopwords
 import pandas as pd
 import numpy as np
+import os
 
 NUM_TRAINING_EXAMPLES = 5172
 NUM_TEST_EXAMPLES = 5857
@@ -58,8 +59,10 @@ def generate_design_matrix(filenames):
     df = pd.DataFrame(data=texts,columns=["texts"])
     x = df["texts"].values
     stops = stopwords.words("english")
-    vectorizer = TfidfVectorizer(stop_words=stops, lowercase=True,max_features=100)
+    vectorizer = TfidfVectorizer(stop_words=stops, lowercase=True, max_features=100)
     design_matrix = vectorizer.fit_transform(x).toarray()
+    df2 = pd.DataFrame(design_matrix, columns = vectorizer.get_feature_names())
+    df2.to_csv(os.path.join(os.getcwd(),r'tfidf.csv'))
     print("matrix shape",design_matrix.shape)
     return design_matrix
 
@@ -83,4 +86,6 @@ file_dict['training_data'] = x
 file_dict['training_labels'] = y
 file_dict['test_data'] = test_design_matrix
 scipy.io.savemat('spam_data.mat', file_dict)
+
+
 
