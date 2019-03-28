@@ -1,6 +1,6 @@
 Dhanush Patel, SID: 3033247258
 - Make sure the python files and notebooks are placed relative to the data files as visualized in the screenshot bundled with this submission in order to reproduce my results.
 - Make sure all the libraries imported in my files are installed. Some special ones to know about are scikit-learn, nltk, and ray.
-- go to the directory containing the featurize_spam.py file and run it before running the spam notebooks.
+- go to the directory containing the featurize_spam.py file and run it before running the spam notebooks in order to create the required spam mat file. Note that running the py file also produces a csv file, in the same directory, with feature names in its top row.
 - Before running any notebooks, when you open them, read the output of cells to see how long they took to run for me as an estimate for how long they might take for you (I used a 6-core i7 laptop) since some training cells take some time to run.
 - For the random forest notebooks, don't try to rerun a cell in the scenarios that it takes a while to run or gives an error. Instead, restart the kernel and then run all cells in order. This is because rerunning a cell using ray causes a ray initialization error.
