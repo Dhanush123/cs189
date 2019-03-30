@@ -1,0 +1,35 @@
+{
+    "metadata": {
+        "id": str, (your own CalNet id without the @berkeley.edu)
+        "youtube": str, (shortened youtube link)
+        "height": int, (video height)
+        "width": int, (video width)
+        "number_frames": int, (number of frames in extracted video)
+        "fps": float, (frame rate. this should be 30fps. you can either record at 30fps, which is the default on many smartphones. or, you can re-code your video to 30fps)
+        "device": str, ('android','ios','other')
+    },
+    "subject_data": {
+        "id": str, (subject's CalNet id without the @berkeley.edu. if the subject doesn't go to Cal, use your own calnet id)
+        "height": float, (subject's height in cm)
+        "torso": float, (subject's torso length in cm. measure front base of the neck to top of pelvis)
+        "wingspan": float, (subject's wingspan in cm. measure wrist to wrist)
+        "femur": float, (subject's femur length in cm. measured hip to knee)
+        "fitness": int (average number of minutes subject spends per week doing a fitness activity with intensity greater than walking)
+    },
+    "movement": {
+        "bilateral": str, (corresponds to the bold label, e.g., reach)
+        "label": boolean, (if true the movement involves both sides of you body in the same way. pushup, squat, reach should be true)
+	"f_start": int, (start frame, should be 1)
+	"f_end": int (end frame, should be number_frames)
+    },
+    "left_frames": {
+        "f_start": int, (start frame of the movement where the left leg is the one in motion. for bilateral movements, this is just the start frame of the movement. IMPORTANT: this is relative to the untrimmed video frames)
+        "f_end": int, (end frame of the movement where the left leg is the one in motion)
+        "f_key": int (key frame of the movement where the left leg is the one in motion. refer to the YouTube description for each movement's 'key frame')
+    },
+    "right_frames": {
+        "f_start": int, (start frame of the movement where the right leg is the one in motion. for bilateral movements, this is just the start frame of the movement)
+        "f_end": int, (end frame of the movement where the right leg is the one in motion.)
+        "f_key": int (key frame of the movement where the right leg is the one in motion. refer to the YouTube description for each movement's 'key frame')
+    }
+}

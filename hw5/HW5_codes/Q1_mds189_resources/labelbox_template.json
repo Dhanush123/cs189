@@ -1,0 +1,191 @@
+{
+  "tools": [
+    {
+      "name": "Nose",
+      "color": "red",
+      "tool": "point"
+    },
+    {
+      "name": "Neck",
+      "color": "red",
+      "tool": "point"
+    },
+    {
+      "name": "RShoulder",
+      "color": "orange",
+      "tool": "point"
+    },
+    {
+      "name": "RElbow",
+      "color": "orange",
+      "tool": "point"
+    },
+    {
+      "name": "RWrist",
+      "color": "orange",
+      "tool": "point"
+    },
+    {
+      "name": "LShoulder",
+      "color": "green",
+      "tool": "point"
+    },
+    {
+      "name": "LElbow",
+      "color": "green",
+      "tool": "point"
+    },
+    {
+      "name": "LWrist",
+      "color": "green",
+      "tool": "point"
+    },
+    {
+      "name": "MidHip",
+      "color": "red",
+      "tool": "point"
+    },
+    {
+      "name": "RHip",
+      "color": "purple",
+      "tool": "point"
+    },
+    {
+      "name": "RKnee",
+      "color": "purple",
+      "tool": "point"
+    },
+    {
+      "name": "RAnkle",
+      "color": "purple",
+      "tool": "point"
+    },
+    {
+      "name": "LHip",
+      "color": "blue",
+      "tool": "point"
+    },
+    {
+      "name": "LKnee",
+      "color": "blue",
+      "tool": "point"
+    },
+    {
+      "name": "LAnkle",
+      "color": "blue",
+      "tool": "point"
+    },
+    {
+      "name": "REye",
+      "color": "gray",
+      "tool": "point"
+    },
+    {
+      "name": "LEye",
+      "color": "gray",
+      "tool": "point"
+    },
+    {
+      "name": "REar",
+      "color": "gray",
+      "tool": "point"
+    },
+    {
+      "name": "LEar",
+      "color": "gray",
+      "tool": "point"
+    },
+    {
+      "name": "LBigToe",
+      "color": "cyan",
+      "tool": "point"
+    },
+    {
+      "name": "LSmallToe",
+      "color": "cyan",
+      "tool": "point"
+    },
+    {
+      "name": "LHeel",
+      "color": "cyan",
+      "tool": "point"
+    },
+    {
+      "name": "RBigToe",
+      "color": "magenta",
+      "tool": "point"
+    },
+    {
+      "name": "RSmallToe",
+      "color": "magenta",
+      "tool": "point"
+    },
+    {
+      "name": "RHeel",
+      "color": "magenta",
+      "tool": "point"
+    }
+  ],
+  "classifications": [
+    {
+      "name": "what_movement_is_this?",
+      "instructions": "What movement is this?",
+      "type": "radio",
+      "options": [
+        {
+          "value": "squat",
+          "label": "squat"
+        },
+        {
+          "value": "reach",
+          "label": "reach"
+        },
+        {
+          "value": "inline",
+          "label": "inline"
+        },
+        {
+          "value": "lunge",
+          "label": "lunge"
+        },
+        {
+          "value": "hamstrings",
+          "label": "hamstrings"
+        },
+        {
+          "value": "stretch",
+          "label": "stretch"
+        },
+        {
+          "value": "deadbug",
+          "label": "deadbug"
+        },
+        {
+          "value": "pushup",
+          "label": "pushup"
+        }
+      ],
+      "required": true
+    },
+    {
+      "name": "which_leg_is_in_motion?",
+      "instructions": "Which leg is in motion?",
+      "type": "radio",
+      "options": [
+        {
+          "value": "left",
+          "label": "left"
+        },
+        {
+          "value": "right",
+          "label": "right"
+        },
+        {
+          "value": "both",
+          "label": "both"
+        }
+      ],
+      "required": true
+    }
+  ]
+}
