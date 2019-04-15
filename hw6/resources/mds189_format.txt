@@ -1,0 +1,142 @@
+The MDS189 dataset has the following directory structure:
+
+hw6_mds189
+ |
+ +- trainval
+     |
+     +- 300 sequence IDs (000 -> 299)
+        |
+        +- frames
+           |
+           +- 8 movement folders
+              |
+              +- sampling of every 12th image during movement
+        |
+        +- key_frames
+           |
+           +- 13 original-sized key frames, renamed as <movement>_<side>.jpg
+        |
+        +- key_frames_resized
+           |
+           +- 13 key frames resized to 224x448
+        |
+        +- labels
+           |
+           +- 8 json label files, named <movement>.json (see below for details)
+  |
+  +- test_kaggle_frames
+     |
+     +- 6197 video frames, same distribution as the 'frames' in 'trainval'
+
+I recommend opening one <movement>.json label with https://jsoneditoronline.org/
+You can navigate to that website, and drag and drop a label file in the left
+panel. On the right panel, you'll be able to view different key's values with
+a convenient drop-down. I recommend opening a JSON there BEFORE reading through
+the structure below. This way, you can compare what you see in the online editor
+to the descriptions below.
+
+The <movement>.json label files have the following broad structure:
+'pseudo_gt_raw' : Per frame detected keypoints results, using OpenPose
+  '/frames'       : list of frame indices. You can compare these with the
+                    labeled left/right 'frame' labels (see field below) to see
+                    frames for one side of the movement.
+  '/num_people'   : list of count of number of people per frame.
+  '/2d_keypoints' : list of list of lists of keypoints. The outer list
+                    corresponds to frame number. The middle list corresponds
+                    to people in a frame. The inner-most list corresponds to the
+                    keypoints themselves. The keypoints lists are 75 dimensions.
+  '/bbox'         : list of list of lists of bounding boxes. The outer list
+                    corresponds to frame number. The middle list corresponds
+                    to people in a frame. The inner-most list corresponds to the
+                    bounding themselves. The bounding boxes are computed from
+                    the keypoints. They are: [xmin,ymin,xmax,ymax] format.
+'gt_pose_dict'  : Raw dictionary output from LabelBox
+  '/left'  : left key frame keypoints
+  '/right' : right key frame keypoints
+'gt_pose'       : LabelBox keypoints in a list, processed from 'gt_pose_dict'
+                  Some students labeled several keypoints for one body joint,
+                  however, there should only be one keypoint per body joint.
+                  These lists are formed from taking the *last* keypoint labeled
+                  for each body joint.
+  '/left'  : left key frame keypoints, 75 dimensions
+  '/right' : right key frame keypoints, 75 dimensions
+'gt_pose_align' : LabelBox keypoints aligned with corresponding (i.e., same
+                  movement) heatherlckwd keypoints. These are also lists with
+                  the same format as 'gt_pose'
+  '/left'  : left key frame keypoints, 75 dimensions
+  '/right' : right key frame keypoints, 75 dimensions
+'frames'        : left and right movement start, end, key frames
+  '/left'
+    '/f_start'  : start frame, zero-indexed (not one-indexed as it was in HW5!)
+    '/f_end'    : end frame, zero-indexed (not one-indexed as it was in HW5!)
+    '/f_key'    : key frame, zero-indexed (not one-indexed as it was in HW5!)
+    '/filename' : 'key_frames/<movement label>_left.jpg'. You shouldn't need
+                  to use this field.
+  '/right'
+    '/f_start'  : start frame, zero-indexed (not one-indexed as it was in HW5!)
+    '/f_end'    : end frame, zero-indexed (not one-indexed as it was in HW5!)
+    '/f_key'    : key frame, zero-indexed (not one-indexed as it was in HW5!)
+    '/filename' : 'key_frames/<movement label>_left.jpg'. You shouldn't need
+                  to use this field.
+'movement'      : similar movement data to JSONs you labeled in HW5
+  '/f_start'   : zero-indexed start frame of movement (you labeled these in HW5)
+  '/f_end'     : zero-indexed end frame of movement (you labeled these in HW5)
+  '/bilateral' : boolean indicating whether the movement is bilateral or not
+  '/label'     : label \in {'reach','squat','inline','lunge','hamstrings',
+                            'stretch','deadbug','pushup'}
+'metadata'      : image, video size, fps, and frame count details
+  'width'              : key frame width, in original size
+  'height'             : key frame height, in original size
+  'video_width'        : downloaded video width, i.e., this is the width of
+                         video frames extracted from the video downloaded using
+                         your provided YouTube links in HW5
+  'video_height'       : downloaded video height, i.e., this is the height of
+                         video frames extracted from the video downloaded using
+                         your provided YouTube links in HW5
+  'video_width_scale'  : all frames are resized to 224x448. This is the
+                         x-coordinate scale factor to multiply with keypoint
+                         annotations so they match up with the resized images.
+  'video_height_scale' : all frames are resized to 224x448. This is the
+                         y-coordinate scale factor to multiply with keypoint
+                         annotations so they match up with the resized images.
+  'number_frames'      : number of frames in the original video
+  'fps'                : frame rate
+  'video_scale'        : ignore this field. I forgot to delete it for you
+                         before uploading the data to Google drive :(
+
+The keypoint lists, which are 75 in length have the format:
+[joint 0 x-coordinate, joint 0 y-coordinate, joint 0 logit,
+ joint 1 x-coordinate, joint 1 y-coordinate, joint 1 logit,
+ .
+ .
+ .
+ joint 24 x-coordinate, joint 24 y-coordinate, joint 24 logit]
+For ground truth keypoints the logit is either 0 or 1, corresponding to whether
+a point was labeled or not. For OpenPose keypoints, the logit is >= 0, and
+roughly corresponds to the network's confidence on the keypoint location.
+The order of the keypoints is:
+['Nose',
+ 'Neck',
+ 'RShoulder',
+ 'RElbow',
+ 'RWrist',
+ 'LShoulder',
+ 'LElbow',
+ 'LWrist',
+ 'MidHip',
+ 'RHip',
+ 'RKnee',
+ 'RAnkle',
+ 'LHip',
+ 'LKnee',
+ 'LAnkle',
+ 'REye',
+ 'LEye',
+ 'REar',
+ 'LEar',
+ 'LBigToe',
+ 'LSmallToe',
+ 'LHeel',
+ 'RBigToe',
+ 'RSmallToe',
+ 'RHeel']
